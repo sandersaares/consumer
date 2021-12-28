@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net6.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+		<DockerfileContext>.</DockerfileContext>
+		<CodeAnalysisRuleset>$(PkgKoek_CodeAnalysis)\content\CodeAnalysis.ruleset</CodeAnalysisRuleset>
+		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+		<EnableNETAnalyzers>True</EnableNETAnalyzers>
+		<AnalysisLevel>preview</AnalysisLevel>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	  <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+	  <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+	  <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+	  <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Koek.CodeAnalysis" Version="2021.1201.19173">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
+		<PackageReference Include="Mono.Options" Version="6.12.0.148" />
+	</ItemGroup>
+
+</Project>

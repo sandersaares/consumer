@@ -1,0 +1,14 @@
+on:
+  push:
+    branches: ['main']
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Publish to Registry
+      uses: elgohr/Publish-Docker-Github-Action@master
+      with:
+        name: sandersaares/consumer
+        username: sandersaares
+        password: ${{ secrets.docker_hub_token }}

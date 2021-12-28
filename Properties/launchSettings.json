@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Consumer": {
+      "commandName": "Project",
+      "commandLineArgs": "--memory-gb 4 --cpu-cores 1"
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "commandLineArgs": "--memory-gb 4 --cpu-cores 1"
+    }
+  }
+}
