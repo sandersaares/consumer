@@ -1,4 +1,5 @@
 ﻿using Mono.Options;
+using Koek;
 using Prometheus;
 using Prometheus.DotNetRuntime;
 using System.Diagnostics;
@@ -25,11 +26,21 @@ public sealed class Program
 
         SetupMetrics();
 
-        var waitForMemoryConsumerToExit = StartConsumingMemory();
-        var waitForCpuConsumersToExit = StartConsumingCpu();
+        try
+        {
+            var waitForMemoryConsumerToExit = StartConsumingMemory();
+            var waitForCpuConsumersToExit = StartConsumingCpu();
 
-        waitForCpuConsumersToExit();
-        waitForMemoryConsumerToExit();
+            // This may wait a few minutes before returning, as extra memory allocation is deliberately delayed.
+            var waitForExtraMemoryConsumerToExit = StartConsumingExtraMemory();
+
+            waitForCpuConsumersToExit();
+            waitForMemoryConsumerToExit();
+            waitForExtraMemoryConsumerToExit();
+        }
+        catch (OperationCanceledException) when (_cancel.IsCancellationRequested)
+        {
+        }
 
         Console.WriteLine("All done.");
     }
@@ -92,9 +103,28 @@ public sealed class Program
         if (_memoryGigabytes == null)
             return delegate { };
 
-        // We split the memory up into 1 MB chunks just because .NET might have a harder time allocating one giant slab.
         var megabytes = _memoryGigabytes.Value * 1024;
 
+        return StartConsumingMemoryCore(megabytes);
+    }
+
+    private Action StartConsumingExtraMemory()
+    {
+        if (_extraMemoryGigabytes == null)
+            return delegate { };
+
+        var megabytes = _extraMemoryGigabytes.Value * 1024;
+
+        Console.WriteLine($"Waiting {_extraMemoryDelaySeconds:N0} seconds before allocating additional memory.");
+
+        Task.Delay(TimeSpan.FromSeconds(_extraMemoryDelaySeconds), _cancel).WaitAndUnwrapExceptions();
+
+        return StartConsumingMemoryCore(megabytes);
+    }
+
+    private Action StartConsumingMemoryCore(int megabytes)
+    {
+        // We split the memory up into 1 MB chunks just because .NET might have a harder time allocating one giant slab.
         var buffers = new List<byte[]>(megabytes);
 
         for (var i = 0; i < megabytes; i++)
@@ -162,6 +192,8 @@ public sealed class Program
 
     private int? _cpuCores;
     private int? _memoryGigabytes;
+    private int? _extraMemoryGigabytes;
+    private int _extraMemoryDelaySeconds = 300;
 
     private ushort _metricsPort = 5000;
 
@@ -180,6 +212,8 @@ public sealed class Program
                 "Resource targets",
                 { "cpu-cores=", "How many CPU cores worth of CPU time to consume.", (int val) => _cpuCores = val },
                 { "memory-gb=", "How many GB of memory to consume and keep actively accessing.", (int val) => _memoryGigabytes = val },
+                { "extra-memory-gb=", "How many GB of extra memory to consume at 5 minutes after startup, and keep actively accessing. Allows you to model a rise in memory consumption.", (int val) => _extraMemoryGigabytes = val },
+                { "extra-memory-delay-seconds=", $"How many seconds to wait before allocating extra memory. Defaults to {_extraMemoryDelaySeconds}", (int val) => _extraMemoryDelaySeconds = val },
                 "Monitoring",
                 { "metrics-port=", $"Port number to publish metrics on. Defaults to {_metricsPort}.", (ushort val) => _metricsPort = val },
                 "",
