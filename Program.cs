@@ -1,4 +1,6 @@
 ﻿using Mono.Options;
+using Prometheus;
+using Prometheus.DotNetRuntime;
 using System.Diagnostics;
 using System.Security.Cryptography;
 
@@ -21,6 +23,8 @@ public sealed class Program
 
         Console.CancelKeyPress += OnControlC;
 
+        SetupMetrics();
+
         var waitForMemoryConsumerToExit = StartConsumingMemory();
         var waitForCpuConsumersToExit = StartConsumingCpu();
 
@@ -34,6 +38,17 @@ public sealed class Program
     {
         _cts.Cancel();
         e.Cancel = true; // We have handled it.
+    }
+
+    private void SetupMetrics()
+    {
+        var metricServer = new KestrelMetricServer(_metricsPort);
+        // We never stop it, just shuts down at end of process.
+        metricServer.Start();
+
+        DotNetRuntimeStatsBuilder.Default().StartCollecting();
+
+        Console.WriteLine($"Publishing metrics on http://+:{_metricsPort}/metrics");
     }
 
     private Action StartConsumingCpu()
@@ -148,6 +163,8 @@ public sealed class Program
     private int? _cpuCores;
     private int? _memoryGigabytes;
 
+    private ushort _metricsPort = 5000;
+
     private bool ParseArguments(string[] args)
     {
         var showHelp = false;
@@ -163,6 +180,8 @@ public sealed class Program
                 "Resource targets",
                 { "cpu-cores=", "How many CPU cores worth of CPU time to consume.", (int val) => _cpuCores = val },
                 { "memory-gb=", "How many GB of memory to consume and keep actively accessing.", (int val) => _memoryGigabytes = val },
+                "Monitoring",
+                { "metrics-port=", $"Port number to publish metrics on. Defaults to {_metricsPort}.", (ushort val) => _metricsPort = val },
                 "",
                 { "debugger", "Requests a debugger to be attached before data processing starts.", val => debugger = val != null, true }
             };

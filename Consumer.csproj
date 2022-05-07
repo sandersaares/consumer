@@ -30,6 +30,8 @@
 		</PackageReference>
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
 		<PackageReference Include="Mono.Options" Version="6.12.0.148" />
+		<PackageReference Include="prometheus-net.AspNetCore" Version="6.0.0" />
+		<PackageReference Include="prometheus-net.DotNetRuntime" Version="4.2.3" />
 	</ItemGroup>
 
 </Project>
