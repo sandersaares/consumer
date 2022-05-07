@@ -16,3 +16,6 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "Consumer.dll"]
+
+# Default port for metrics is 5000. Can be overridden via --metrics-port.
+EXPOSE 5000
