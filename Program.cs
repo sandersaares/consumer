@@ -7,11 +7,12 @@ using System.Security.Cryptography;
 
 namespace Consumer;
 
-public sealed class Program
+public sealed class Program : IDisposable
 {
     static void Main(string[] args)
     {
-        new Program().Execute(args);
+        using (var program = new Program())
+            program.Execute(args);
     }
 
     private void Execute(string[] args)
@@ -91,7 +92,8 @@ public sealed class Program
     {
         Console.WriteLine("Consuming 1 CPU core worth of CPU time.");
 
-        var inputBuffer = RandomNumberGenerator.GetBytes(1 * 1024 * 1024);
+        // We make this buffer quite big so it has a high probability to trash CPU caches when accessed.
+        var inputBuffer = RandomNumberGenerator.GetBytes(32 * 1024 * 1024);
         var outputBuffer = new byte[512 / 8];
 
         while (!_cancel.IsCancellationRequested)
@@ -189,6 +191,12 @@ public sealed class Program
 
     private readonly CancellationTokenSource _cts = new();
     private readonly CancellationToken _cancel;
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+    }
 
     private int? _cpuCores;
     private int? _memoryGigabytes;
